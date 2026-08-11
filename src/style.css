@@ -1,0 +1,132 @@
+@import './styles/tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family:
+    'PingFang SC',
+    'Source Han Sans CN',
+    'Noto Sans SC',
+    'Microsoft YaHei',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+ul,
+ol,
+p {
+  margin: 0;
+  padding: 0;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--bg-page);
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+/* 内容宽度约束（可与滚动容器拆开，避免 Pad 上只能在中间栏滑动） */
+.page__body {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* 全宽滚动热区：左右留白也能拖动页面 */
+.page__body--scroll {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.page__body--scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* 滚动容器 + 内容约束叠在同一节点时，取消 max-width，改由内部 page__body 收窄 */
+.page__body--scroll > .page__body {
+  box-sizing: border-box;
+}
+
+.surface-card {
+  background: var(--surface-deep);
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.divider {
+  height: 0.5px;
+  background: var(--border-subtle);
+  margin: 0 16px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 26.667px;
+  background: var(--badge);
+  color: #fff;
+  font-size: 10.667px;
+  font-weight: 700;
+  line-height: 13.333px;
+}
