@@ -173,7 +173,7 @@ function onResize() {
 }
 
 onMounted(() => {
-  if (!import.meta.env.DEV) return
+  // 演示阶段（含 GitHub Pages 生产包）也显示 Mock 浮层；正式上线给真实用户前再加回 DEV 限制
   mode.value = getMockUploadMode()
   submitMode.value = getMockSubmitMode()
   restorePanel()
