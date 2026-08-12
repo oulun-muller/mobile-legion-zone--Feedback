@@ -5,6 +5,7 @@ import AppNavBar from '@/components/AppNavBar.vue'
 import PhotoThumb from '@/components/PhotoThumb.vue'
 import { useAutoGrowField } from '@/composables/useAutoGrowField'
 import { useLocalImages } from '@/composables/useLocalImages'
+import { useMaxLengthToast } from '@/composables/useMaxLengthToast'
 import { FEEDBACK_TYPES } from '@/data/mock'
 import { useFeedbackStore } from '@/stores/feedback'
 import { simulateSubmit } from '@/utils/mockSubmit'
@@ -17,6 +18,8 @@ import iconCheck from '@/assets/icons/icon-check.svg'
 /** 稿面问题描述区：min 48 / max 228 */
 const DESC_FIELD_MIN = 48
 const DESC_FIELD_MAX = 228
+/** 问题描述字数上限 */
+const DESC_MAX_LENGTH = 500
 /** 中国大陆手机号：1 开头，第二位 3-9，共 11 位 */
 const PHONE_REGEX = /^1[3-9]\d{9}$/
 /** QQ 号：5-11 位纯数字，首位不为 0 */
@@ -47,6 +50,8 @@ const {
   minHeight: DESC_FIELD_MIN,
   maxHeight: DESC_FIELD_MAX,
 })
+const { onBeforeInput: onDescBeforeInput, onInput: onDescLimitInput } =
+  useMaxLengthToast(DESC_MAX_LENGTH)
 const {
   images,
   allowMultiple,
@@ -84,6 +89,11 @@ onMounted(() => {
 watch(description, () => {
   nextTick(resizeDescField)
 })
+
+function onDescInput(event: Event) {
+  resizeDescField()
+  onDescLimitInput(event)
+}
 
 async function submit() {
   if (!canSubmit.value || submitting.value) return
@@ -183,10 +193,11 @@ async function submit() {
                 <textarea
                   ref="descTextareaRef"
                   v-model="description"
-                  maxlength="500"
+                  :maxlength="DESC_MAX_LENGTH"
                   rows="1"
                   placeholder="期待你的建议，帮助我们做的更好～"
-                  @input="resizeDescField"
+                  @input="onDescInput"
+                  @beforeinput="onDescBeforeInput($event, description)"
                 />
               </div>
               <div
@@ -203,7 +214,7 @@ async function submit() {
                 />
               </div>
             </div>
-            <p class="desc__count">{{ description.length }}/500</p>
+            <p class="desc__count">{{ description.length }}/{{ DESC_MAX_LENGTH }}</p>
           </div>
           <div class="divider tight" />
           <div class="desc__photos">

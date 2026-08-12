@@ -11,6 +11,9 @@ import vue from '@vitejs/plugin-vue'
 function fileProtocolFriendlyHtml(): Plugin {
   return {
     name: 'file-protocol-friendly-html',
+    // 仅用于生产构建产物；dev server 下 main.ts 是未打包的原生 ESM，
+    // 去掉 type="module" 会导致 import 语句报语法错误、Vue 挂载失败。
+    apply: 'build',
     enforce: 'post',
     transformIndexHtml(html) {
       return html

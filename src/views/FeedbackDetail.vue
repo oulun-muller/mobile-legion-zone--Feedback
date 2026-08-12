@@ -6,6 +6,7 @@ import PhotoThumb from '@/components/PhotoThumb.vue'
 import { useAutoGrowField } from '@/composables/useAutoGrowField'
 import { useKeyboardInset } from '@/composables/useKeyboardInset'
 import { useLocalImages } from '@/composables/useLocalImages'
+import { useMaxLengthToast } from '@/composables/useMaxLengthToast'
 import { useFeedbackStore } from '@/stores/feedback'
 import { historyLocation, leaveToHistory, parseHelpTab } from '@/utils/helpTab'
 import { simulateSubmit } from '@/utils/mockSubmit'
@@ -17,6 +18,8 @@ import iconSend from '@/assets/icons/icon-send.png'
 const FIELD_MIN = 72
 const FIELD_MAX = 144
 const FIELD_PAD_Y = 24
+/** 追加回复字数上限，与反馈表单「问题描述」保持一致 */
+const DRAFT_MAX_LENGTH = 500
 
 const route = useRoute()
 const router = useRouter()
@@ -56,6 +59,9 @@ const {
   maxHeight: FIELD_MAX,
   extraPadding: () => (images.value.length > 0 ? 12 : FIELD_PAD_Y),
 })
+
+const { onBeforeInput: onDraftBeforeInput, onInput: onDraftLimitInput } =
+  useMaxLengthToast(DRAFT_MAX_LENGTH)
 
 const ticket = computed(() => store.getTicket(String(route.params.id)))
 const canSend = computed(
@@ -147,6 +153,11 @@ async function scrollBottom() {
 function resizeComposer() {
   resizeComposerField()
   measureComposer()
+}
+
+function onDraftInput(event: Event) {
+  resizeComposer()
+  onDraftLimitInput(event)
 }
 
 function clearFocusTimers() {
@@ -312,8 +323,10 @@ async function send() {
                 ref="textareaRef"
                 v-model="draft"
                 rows="1"
+                :maxlength="DRAFT_MAX_LENGTH"
                 placeholder="你可以在此，追加反馈..."
-                @input="resizeComposer"
+                @input="onDraftInput"
+                @beforeinput="onDraftBeforeInput($event, draft)"
                 @focus="onComposerFocus"
                 @blur="onComposerBlur"
               />
@@ -347,20 +360,23 @@ async function send() {
               <span>附加照片</span>
               <span>{{ images.length }}/3</span>
             </button>
-            <button
-              type="button"
-              class="send"
-              :class="{ 'send--active': canSend }"
-              :disabled="!canSend || sending"
-              aria-label="发送"
-              @click="send"
-            >
-              <span
-                class="send__icon"
-                :style="{ WebkitMaskImage: `url(${iconSend})`, maskImage: `url(${iconSend})` }"
-                aria-hidden="true"
-              />
-            </button>
+            <div class="composer__meta">
+              <p class="composer__count">{{ draft.length }}/{{ DRAFT_MAX_LENGTH }}</p>
+              <button
+                type="button"
+                class="send"
+                :class="{ 'send--active': canSend }"
+                :disabled="!canSend || sending"
+                aria-label="发送"
+                @click="send"
+              >
+                <span
+                  class="send__icon"
+                  :style="{ WebkitMaskImage: `url(${iconSend})`, maskImage: `url(${iconSend})` }"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -590,9 +606,27 @@ async function send() {
 .composer__toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
   flex-shrink: 0;
   padding: 8px;
+}
+
+.composer__meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.composer__count {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-disabled);
+  text-align: right;
+  white-space: nowrap;
 }
 
 .attach {
