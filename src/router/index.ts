@@ -1,30 +1,36 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
+import HelpCenter from '@/views/HelpCenter.vue'
+import FeedbackForm from '@/views/FeedbackForm.vue'
+import FeedbackHistory from '@/views/FeedbackHistory.vue'
+import FeedbackDetail from '@/views/FeedbackDetail.vue'
 
 const router = createRouter({
-  history: createWebHistory(),
+  // Hash 模式：支持双击 dist/index.html（file://）打开
+  history: createWebHashHistory(),
   routes: [
     {
       path: '/',
       name: 'help',
-      component: () => import('@/views/HelpCenter.vue'),
+      // 同步引入：避免 file:// 下动态 import 分片被浏览器拦截
+      component: HelpCenter,
       meta: { title: '帮助与反馈' },
     },
     {
       path: '/feedback',
       name: 'feedback',
-      component: () => import('@/views/FeedbackForm.vue'),
+      component: FeedbackForm,
       meta: { title: '我要反馈' },
     },
     {
       path: '/history',
       name: 'history',
-      component: () => import('@/views/FeedbackHistory.vue'),
+      component: FeedbackHistory,
       meta: { title: '历史反馈' },
     },
     {
       path: '/detail/:id',
       name: 'detail',
-      component: () => import('@/views/FeedbackDetail.vue'),
+      component: FeedbackDetail,
       meta: { title: '反馈详情' },
     },
     {

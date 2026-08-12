@@ -1,9 +1,29 @@
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+/**
+ * 让 dist/index.html 能在 file:// 下双击打开：
+ * - 去掉 crossorigin（本地文件协议下会触发 CORS 拦截）
+ * - 去掉 type="module"（Chrome 禁止 file:// 加载 ES Module）
+ * - 要求产物是 IIFE 单文件（见下方 build.rollupOptions）
+ */
+function fileProtocolFriendlyHtml(): Plugin {
+  return {
+    name: 'file-protocol-friendly-html',
+    enforce: 'post',
+    transformIndexHtml(html) {
+      return html
+        .replace(/\s+crossorigin(?:="[^"]*")?/g, '')
+        .replace(/<script type="module"\s+/g, '<script defer ')
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [vue()],
+  // 相对路径：双击 dist/index.html 时资源才能找对
+  base: './',
+  plugins: [vue(), fileProtocolFriendlyHtml()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -12,6 +32,20 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    // 真机访问时若遇防火墙拦截，需允许 5173 入站
+  },
+  build: {
+    cssCodeSplit: false,
+    modulePreload: false,
+    assetsInlineLimit: 4096,
+    rollupOptions: {
+      output: {
+        // IIFE：普通 <script> 即可执行，不依赖 ES Module
+        format: 'iife',
+        name: 'LegionFeedbackApp',
+        inlineDynamicImports: true,
+        entryFileNames: 'assets/app.js',
+        assetFileNames: 'assets/[name][extname]',
+      },
+    },
   },
 })
