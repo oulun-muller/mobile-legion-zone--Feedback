@@ -39,3 +39,8 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+## GitHub Pages
+
+推送到 `main` 后，Actions 会执行 `npm run build` 并只部署 `dist/`。  
+演示地址：https://oulun-muller.github.io/mobile-legion-zone--Feedback/
