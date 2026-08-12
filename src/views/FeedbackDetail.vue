@@ -37,7 +37,6 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const composerHeight = ref(0)
 /** 输入区是否处于焦点（比临时看 activeElement 更稳，相册关闭后仍可判断） */
 const composerFocused = ref(false)
-let focusTimers: ReturnType<typeof setTimeout>[] = []
 
 const {
   images,
@@ -115,7 +114,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (settleTimer) clearTimeout(settleTimer)
-  clearFocusTimers()
   composerObserver?.disconnect()
   composerObserver = null
 })
@@ -136,8 +134,13 @@ watch(images, () => {
   })
 })
 
-// 键盘动画结束后再滚消息到底，避免动画中反复 scrollTop
+// 键盘 inset 变化会同步改一次 composer__panel--keyboard 的 class（影响输入区高度），
+// 这里主动等 DOM 应用完这次 class 变化后立刻重新测量，不完全依赖 ResizeObserver 的异步回调，
+// 避免 .chat 的 padding-bottom 有短暂滞后、导致底部滑动短暂被固定输入区"抢"走。
 watch(keyboardInset, () => {
+  nextTick(measureComposer)
+
+  // 键盘动画结束后再滚消息到底，避免动画中反复 scrollTop
   if (settleTimer) clearTimeout(settleTimer)
   settleTimer = setTimeout(() => {
     scrollBottom()
@@ -170,25 +173,25 @@ function onDraftKeydown(event: KeyboardEvent) {
   send()
 }
 
-function clearFocusTimers() {
-  focusTimers.forEach((id) => clearTimeout(id))
-  focusTimers = []
-}
-
-/** 手机相册关闭后同一帧 focus 常常无效，需短延迟补焦才能拉起键盘 */
+/**
+ * 相册关闭后把焦点还给输入框。
+ *
+ * 注意：这里只能保证 DOM 层面重新拿到 focus，不保证系统软键盘一定弹出——
+ * 后者取决于 Android WebView 原生层此时是否已经把窗口焦点还给 WebView、
+ * 以及宿主 App 有没有在相册 Activity 返回后主动调用 InputMethodManager.showSoftInput()，
+ * 这些都在纯前端代码触达范围之外，加更多猜时间的重试也无法弥补。
+ * 所以只做「立即 + 下一帧」这两次几乎零成本的尝试；如果宿主没跟上，
+ * 用户再点一下输入框即可唤出键盘，这也是微信等 IM 产品的实际做法。
+ */
 function focusComposer() {
   const el = textareaRef.value
   if (!el) return
-  clearFocusTimers()
   const run = () => {
     el.focus({ preventScroll: true })
     syncKeyboard()
   }
   run()
   requestAnimationFrame(run)
-  ;[50, 120, 280].forEach((ms) => {
-    focusTimers.push(window.setTimeout(run, ms))
-  })
 }
 
 function onComposerFocus() {
