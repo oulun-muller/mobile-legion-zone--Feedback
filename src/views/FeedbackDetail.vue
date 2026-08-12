@@ -12,7 +12,8 @@ import { historyLocation, leaveToHistory, parseHelpTab } from '@/utils/helpTab'
 import { simulateSubmit } from '@/utils/mockSubmit'
 import { toast, toastError } from '@/utils/toast'
 import iconAddPicture from '@/assets/icons/icon-add-picture.svg'
-import iconSend from '@/assets/icons/icon-send.png'
+import iconSendActive from '@/assets/icons/icon-send-active.svg'
+import iconSendInactive from '@/assets/icons/icon-send-inactive.svg'
 
 /** 稿面文本区外框：含 padding，最小 72 / 最大 144（对话页专用，与反馈表单无关） */
 const FIELD_MIN = 72
@@ -158,6 +159,15 @@ function resizeComposer() {
 function onDraftInput(event: Event) {
   resizeComposer()
   onDraftLimitInput(event)
+}
+
+/** 对话页回车即发送（对齐微信/QQ 等 IM 习惯），Shift+回车仍可换行；
+ * 输入法候选词确认时的回车（isComposing / keyCode 229）不触发发送。 */
+function onDraftKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Enter' || event.shiftKey) return
+  if (event.isComposing || (event as unknown as { keyCode?: number }).keyCode === 229) return
+  event.preventDefault()
+  send()
 }
 
 function clearFocusTimers() {
@@ -324,9 +334,11 @@ async function send() {
                 v-model="draft"
                 rows="1"
                 :maxlength="DRAFT_MAX_LENGTH"
+                enterkeyhint="send"
                 placeholder="你可以在此，追加反馈..."
                 @input="onDraftInput"
                 @beforeinput="onDraftBeforeInput($event, draft)"
+                @keydown="onDraftKeydown"
                 @focus="onComposerFocus"
                 @blur="onComposerBlur"
               />
@@ -365,15 +377,16 @@ async function send() {
               <button
                 type="button"
                 class="send"
-                :class="{ 'send--active': canSend }"
                 :disabled="!canSend || sending"
                 aria-label="发送"
                 @click="send"
               >
-                <span
+                <img
                   class="send__icon"
-                  :style="{ WebkitMaskImage: `url(${iconSend})`, maskImage: `url(${iconSend})` }"
-                  aria-hidden="true"
+                  :src="canSend ? iconSendActive : iconSendInactive"
+                  width="24"
+                  height="24"
+                  alt=""
                 />
               </button>
             </div>
@@ -665,19 +678,8 @@ async function send() {
 }
 
 .send__icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: block;
-  background: rgba(245, 245, 247, 0.28);
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-}
-
-.send--active .send__icon {
-  background: var(--brand-mid);
 }
 </style>
