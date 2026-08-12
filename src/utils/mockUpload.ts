@@ -12,17 +12,33 @@ export type MockUploadMode = 'off' | 'loading' | 'error' | 'slow'
 
 const MOCK_KEY = 'mockUpload'
 
+/** Hash 路由下参数常在 #/path?key= 里，需同时读 search 与 hash query */
+function readQueryParam(key: string): string | null {
+  if (typeof window === 'undefined') return null
+  const fromSearch = new URLSearchParams(window.location.search).get(key)
+  if (fromSearch != null) return fromSearch
+  const hash = window.location.hash
+  const q = hash.indexOf('?')
+  if (q === -1) return null
+  return new URLSearchParams(hash.slice(q + 1)).get(key)
+}
+
 export function getMockUploadMode(): MockUploadMode {
-  if (typeof window === 'undefined') return 'off'
-  const q = new URLSearchParams(window.location.search).get(MOCK_KEY)
+  const q = readQueryParam(MOCK_KEY)
   if (q === 'loading' || q === 'error' || q === 'slow') return q
   return 'off'
 }
 
 export function buildMockUploadUrl(mode: MockUploadMode) {
   const url = new URL(window.location.href)
-  if (mode === 'off') url.searchParams.delete(MOCK_KEY)
-  else url.searchParams.set(MOCK_KEY, mode)
+  const rawHash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash || '/'
+  const [hashPath, hashQuery = ''] = rawHash.split('?')
+  const params = new URLSearchParams(hashQuery || url.search)
+  url.search = ''
+  if (mode === 'off') params.delete(MOCK_KEY)
+  else params.set(MOCK_KEY, mode)
+  const q = params.toString()
+  url.hash = q ? `#${hashPath}?${q}` : `#${hashPath}`
   return url.pathname + url.search + url.hash
 }
 

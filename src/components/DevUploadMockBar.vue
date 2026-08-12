@@ -14,8 +14,9 @@ import {
 const STORAGE_KEY = 'lz-upload-mock-panel'
 const DRAG_THRESHOLD = 10
 
-const visible = ref(false)
-const expanded = ref(false)
+/** 演示阶段默认显示；正式上线前可改回 false 并加 DEV 限制 */
+const visible = ref(true)
+const expanded = ref(true)
 const mode = ref<MockUploadMode>('off')
 const submitMode = ref<MockSubmitMode>('off')
 const panel = reactive({
@@ -83,16 +84,28 @@ function clampPosition(x: number, y: number) {
 function restorePanel() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return
+    if (!raw) {
+      // 无历史位置时固定左下附近，避免被误以为「没了」
+      const next = clampPosition(12, Math.max(8, window.innerHeight - 220))
+      panel.x = next.x
+      panel.y = next.y
+      return
+    }
     const data = JSON.parse(raw) as { x?: number; y?: number; expanded?: boolean }
     if (typeof data.x === 'number' && typeof data.y === 'number') {
       const next = clampPosition(data.x, data.y)
       panel.x = next.x
       panel.y = next.y
+    } else {
+      const next = clampPosition(12, Math.max(8, window.innerHeight - 220))
+      panel.x = next.x
+      panel.y = next.y
     }
     if (typeof data.expanded === 'boolean') expanded.value = data.expanded
   } catch {
-    // ignore
+    const next = clampPosition(12, Math.max(8, window.innerHeight - 220))
+    panel.x = next.x
+    panel.y = next.y
   }
 }
 
